@@ -1,4 +1,9 @@
 namespace Cloak
 
+/*
+  This is tricky, as it doesnt cover all of the cases we need...
+  : file.close
+  Nothing is going to force this to be implicitly converted (therefore calling the function)
+*/
 implicit def call0ArgFunction[O](f: => O): O =
     f()

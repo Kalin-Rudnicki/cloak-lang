@@ -1,0 +1,12 @@
+namespace Cloak
+
+function ->[T1, T2] (_1: T1, _2: T2)[(T1, T2)] =
+    (v1, v2)
+
+// This says that you can change the values in the Tuple (unless the object tuple is immutable)
+class Tuple[T1, T2](public _1$: T1, public _2$: T2) {
+
+    public method ->[T3](_3: 3): (T1, T2, T3) =
+        (_1, _2, _3)
+
+}

@@ -27,6 +27,39 @@ class Int {
 
     // =====| Other |=====
 
+    @Override
+    public method toStr: String =
+        toStrHelper(this, Nil)
+
+    @TailRec
+    function toStrHelper(left: Int, builder: List[UChar]): String = left match {
+        case 0 => String(builder.reverse)
+        case i =>
+            // What are the rules on down-casing a value?
+            // Especially implicitly? We will just go with it for now
+            c: UChar = left % 10
+            toStrHelper(left / 10, List(c, builder))
+    }
+
+}
+
+/*
+Would this be a fair assumption:
+If you have a locally or globally defined function "f" of type "(T, ...) => R",
+you can call t.f(...)
+
+This should eliminate the need for ever having to do "pimp my class" conversions, just for the sake of infix notation
+If the compiler sees multiple things it could call, you just have to specify it yourself.
+
+I imagine this might be problematic for my idea regarding an incremental compiler.
+I would need to do something smart to make sure no functions were added to namespaces in files... well...
+If a file was changed, the compiler would need to compile it for incremental purposes. This is TBD...
+Obviously though... if an object has a method with that name, it will prioritize that...
+
+But overall, I think this concept makes a lot of sense, this is literally all that 
+*/
+namespace Int {
+
     // Assert str matches a certain regex
     // Probably unlikely to have much of a use, and if it needs to be checked at compile time, it will be slow
     // Would it make sense to have some sort of @CompileTimeAssert(...) where you can only call it if you can pass the assertion at compile time?
@@ -48,39 +81,4 @@ class Int {
     // parseBaseX
     // Would require more casing and checks, so I think it would be worth to have the regular base 10
 
-    @Override
-    public method toStr: String =
-        toStrHelper(this, Nil)
-
-    @TailRec
-    function toStrHelper(left: Int, builder: List[UChar]): String = left match {
-        case 0 => String(builder.reverse)
-        case i =>
-            // What are the rules on down-casing a value?
-            // Especially implicitly? We will just go with it for now
-            c: UChar = left % 10
-            toStrHelper(left / 10, List(c, builder))
-    }
-
 }
-
-/*
-  I think these would probably go right on String, but just to get a feel for this type of override
-  "<<" is kinda like saying "implicitly extends"
-  I really dont think I would want to allow something like: "function fun(imfs: IntMethodsForString): ..."
-  I think the sole purpose is adding methods to existing classes for ease of use
-  I question that though... I need an example of where I want to extend a trait (template idea?)
-*/ 
-class IntMethodsForString <<| String {
-
-    method toInt: Int? =
-        Int.parseInt(this)
-
-
-}
-
-/*
-Would this be a fair assumption:
-If you have a locally or globally defined function "f" of type "(T, ...) => R",
-you can call t.f(...)
-*/
