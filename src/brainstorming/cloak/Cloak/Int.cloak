@@ -1,0 +1,86 @@
+namespace Cloak
+
+// Should these automatically be in scope?
+import Cloak.Compiler.Assert
+import Cloak.Compiler.TailRec
+import Cloak.Compiler.Override
+
+import Cloak.Collections.List
+
+class Int {
+
+    // =====| Math |=====
+
+    // I like the idea of private being the default
+    public method + (i: Int): Int =
+        native "asm"
+    
+    public method - (i: Int): Int =
+        native "asm"
+
+    public method * (i: Int): Int =
+        native "asm"
+    
+    @Assert(i != 0)
+    public method / (i: Int): Int =
+        native "asm"
+
+    // =====| Other |=====
+
+    // Assert str matches a certain regex
+    // Probably unlikely to have much of a use, and if it needs to be checked at compile time, it will be slow
+    // Would it make sense to have some sort of @CompileTimeAssert(...) where you can only call it if you can pass the assertion at compile time?
+    public function parseInt(str: String): Int? = str.toCharList match {
+        case Nil => NumberFormatErr("Length is 0"))
+        case List("-", Nil) => NumberFormatErr("Length after '-' is 0")
+        case List("-", chars) => -1 * parseNumbers(chars, 0)
+        case chars => parseNumbers(chars, 0)
+    }
+
+    // private by default
+    @TailRec
+    function parseNumbers(chars: List[UChar], sum: Int): Int? = chars match {
+        case Nil => sum
+        case List(c, rest) if (c >= '0' && c <= '9') => parseNumbers(rest, sum * 10 + c - '0')
+        case List(c, _) => NumberFormatErr("'$c' is not part of a valid base-10 number")
+    }
+
+    // parseBaseX
+    // Would require more casing and checks, so I think it would be worth to have the regular base 10
+
+    @Override
+    public method toStr: String =
+        toStrHelper(this, Nil)
+
+    @TailRec
+    function toStrHelper(left: Int, builder: List[UChar]): String = left match {
+        case 0 => String(builder.reverse)
+        case i =>
+            // What are the rules on down-casing a value?
+            // Especially implicitly? We will just go with it for now
+            c: UChar = left % 10
+            toStrHelper(left / 10, List(c, builder))
+    }
+
+}
+
+/*
+  I think these would probably go right on String, but just to get a feel for this type of override
+  "<<" is kinda like saying "implicitly extends"
+  I really dont think I would want to allow something like: "function fun(imfs: IntMethodsForString): ..."
+  I think the sole purpose is adding methods to existing classes for ease of use
+  I question that though... I need an example of where I want to extend a trait (template idea?)
+*/ 
+class IntMethodsForString <<| String {
+
+    method toInt: Int? =
+        Int.parseInt(this)
+
+
+}
+
+/*
+Would this be a fair assumption:
+If you have a locally or globally defined function "f" of type "(T, ...) => R",
+you can call t.f(...)
+*/

@@ -1,0 +1,4 @@
+namespace Cloak
+
+implicit def call0ArgFunction[O](f: => O): O =
+    f()

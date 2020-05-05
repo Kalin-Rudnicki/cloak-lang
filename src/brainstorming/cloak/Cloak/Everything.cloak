@@ -1,0 +1,10 @@
+namespace Cloak
+
+// IDK about the name Everything
+// default for everything is sealed
+// Classes that are sealed can be extended in the same file, but not elsewhere
+unsealed trait Everything {
+
+    public method toStr: String
+
+}
