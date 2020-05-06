@@ -10,3 +10,18 @@ class Tuple[T1, T2](public _1$: T1, public _2$: T2) {
         (_1, _2, _3)
 
 }
+
+// Or, do it like this:
+
+function ->[T1, T2, T3](t: (T1, T2), _3: T3): (T1, T2, T3) =
+    (t._1, t._2, _3)
+
+// Could this infix notation be used in relation to type-classes?
+// Im thinking probably not, that its more just for infix...
+
+/*
+  @Overridable    (for methods)
+  @Extendable     (for classes)
+
+  Any default parameters must be defined similarly to ruby named arguments
+*/
