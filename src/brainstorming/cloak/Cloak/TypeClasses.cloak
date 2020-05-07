@@ -1,0 +1,26 @@
+
+typeclass Contextualizer[C[_]] {
+    function wrap[T](t: T): C[T]
+}
+
+instance OptionContextualizer << Contextualizer[Option[_]] {
+    function wrap[T](t: T): Option[T] =
+        Some(t)
+}
+
+opt1: Option[Int] = 5.wrap
+opt2: Option[Int] = Contextualizer.wrap(5)
+opt3: Option[Int] = Contextualizer[Option[_]].wrap[Int](5)
+
+function wrapMyFrend[C[_], T](t: T): C[T] =
+    Contextualizer[C[_]].wrap[T](t)
+
+
+opt4: Option[Int] = 5.wrapMyFriend
+
+/*
+  No such "wrapMyFriend()" on Int
+  Found function "wrapMyFriend(Int)"
+*/
+
+eith1: Either[String, Int] = 5.wrapMyFriend
