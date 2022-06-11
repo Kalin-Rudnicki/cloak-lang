@@ -1,0 +1,41 @@
+
+// This should not assume what type it is until it needs to be used
+int1 := 4
+int2 : Int = 4
+
+// How much type inference can we do with this one?
+// Possibly look up all things that could possible call 'show(_)'?
+funct1 := _.show
+funct2 := show(_)
+funct3 : Int -> String = _.show
+funct4 : Int -> String = show(_)
+funct5 : Int -> String = i -> i.show
+funct6 : (i: Int) -> String = i.show
+
+gFunct1 : [A] -> A -> (A, A) = a -> (a, a)
+gFunct2 : [A] -> (a: A) -> (A, A) = (a, a)
+gFunct3 : [A: Show] -> (a: A) -> String = a.show
+// TODO (KR) : Should the Show go first, last?
+//           : Where should the '?->' go?
+gFunct4 : [A] -> (a: A) ?-> Show[A] -> String = a.show
+gFunct5 : [A] -> (a: A) ?-> (s: Show[A]) -> String = s.show(a)
+
+tmp1 := gFunct5[Int](45)
+tmp2 := gFunct5(45)
+tmp3 := gFunct5(45)(using s = ???)
+tmp4 := 45.gFunct5
+tmp5 := 45.gFunct5(using s = ???)
+
+vFunct1 : [A] -> (as: A*) -> List[A] = ???
+vFunct2 : [A] -> A* -> List[A] = vFunct1
+vFunct3 : [A] -> Seq[A] -> List[A] = vFunct2
+
+tmp6 : List[Int] = vFunct1(1, 2, 3)
+
+vFunct4 : [A] -> (as1: A*, as2: A*) -> List[A] = vFunct1(as1*) ++ vFunct2(as2*, as1*)
+
+tmp7 := vFunct4(as1 = 1, 2, 3, as2 = 4, 5, 6)
+tmp8 := vFunct4(as1 = tmp7*, 1, 2, 3, as2 = 4, tmp7*, 5, 6, tmp7*)
+
+// I dont know why you would want to do this, but you could...
+tmp9 := vFunct1(List(1, 2, 3)*, List(4, 5, 6)*)

@@ -1,0 +1,50 @@
+
+/**
+ * If 
+ */
+
+// =====| Number Types |=====
+
+UInt8  : Type.UInt8  = native
+UInt16 : Type.UInt16 = native
+UInt32 : Type.UInt32 = native
+UInt64 : Type.UInt64 = native
+UInt   : Type.UInt   = native // Unsigned Integer of unbounded size, probably not MVP
+
+Int8  : Type.Int8  = native
+Int16 : Type.Int16 = native
+Int32 : Type.Int32 = native
+Int64 : Type.Int64 = native
+Int   : Type.Int   = native // Signed Integer of unbounded size, probably not MVP
+
+Decimal32 : Type.Decimal32 = native
+Decimal64 : Type.Decimal64 = native
+Decimal   : Type.Decimal   = native // Decimal Number of unbounded size, probably not MVP
+
+// =====| Other Types |=====
+
+Any     : Type.Any     = native
+Boolean : Type.Boolean = native
+Char    : Type.Char    = native
+String  : Type.String  = native
+Symbol  : Type.Symbol  = native
+
+Array   : (T: Type)            -> Type.Array   = native
+Struct  : (M: (Symbol, Type)*) -> Type.Struct  = native
+Record  : (M: (Symbol, Type)*) -> Type.Record  = native
+NewType : (T: Type)            -> Type.NewType = native
+
+// TODO (KR) : How to implement ADTs?
+// TODO (KR) : How to implement Functions?
+// TODO (KR) : How to implement singletons? [Unit]
+
+// Attempt at defining functions...
+
+Function: Type.Function = native // I think this needs more...?
+
+Function0: (F: () -> Type)           -> Type.Function = native
+Function1: (F: Type -> Type)         -> Type.Function = native
+Function2: (F: (Type, Type) -> Type) -> Type.Function = native
+FunctionN: (F: Array[Type] -> Type)  -> Type.Function = native
+
+// Not sure how to go about this one...
