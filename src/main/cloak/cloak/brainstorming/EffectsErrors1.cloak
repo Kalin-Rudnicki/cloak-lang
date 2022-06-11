@@ -1,0 +1,59 @@
+
+// context
+
+namespace Console {
+
+    readLine : Effect[String] = ???
+
+    print : String -> Effect[Unit] = ???
+
+    println : String -> Effect[Unit] = ???
+
+}
+
+toInt : String -> Fallible[Error, Nothing, Int] = ???
+
+// helpers
+
+getInfo : Effect[Fallible[Error, Nothing, (String, Int)]] = {
+    // unwrap the Effect
+    _ : Unit = #Console.print("Your name: ")
+
+    // unwrap the Effect
+    name : String = #Console.readLine
+
+    // unwrap the Effect
+    _ : Unit = #Console.print("Your age: ")
+
+    // unwrap the Effect
+    // compute a Fallible value using the result of the effect
+    //unwrap the resulting Fallible
+    age : Int = ~(#Console.readLine).toInt
+
+    // another way to express the above line, without using extension syntax
+    //        = ~toInt(#Console.readLine)
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Fallible[Nothing, String, Beer] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : Effect[Fallible[Error, String, Beer]] = {
+    // unwrap the Effect, and then the Fallible
+    (name, age) : (String, Int) = ~#getInfo
+
+    // don't unwrap anything
+    fBeer : Fallible[Nothing, String, Beer] = makePurchase(name, age)
+
+    // map the error, and leave it wrapped
+    fBeer2 : Fallible[Nothing, String, Beer] = fBeer.mapError { e -> "Uh oh... $e" }
+
+    // unwrap the Fallible
+    beer : Beer = ~fBeer2
+
+    beer
+}

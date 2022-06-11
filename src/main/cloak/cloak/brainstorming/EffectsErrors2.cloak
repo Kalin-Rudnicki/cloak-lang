@@ -1,0 +1,248 @@
+
+type Fallable[UHE, HE, A] = ???
+namespace Fallable {
+
+    // =====| Types |=====
+
+    // TODO (KR) : Come up with names for these
+    
+    type F1[UHE, A] = Fallable[UHE,     Nothing, A]
+    type F2[HE, A]  = Fallable[Nothing, HE,      A]
+
+    type F3[A] = Fallable[Nothing, Nothing, A]
+
+    type F4[UHE, HE] = Fallable[UHE,     HE,      Nothing]
+    type F5[UHE]     = Fallable[UHE,     Nothing, Nothing]
+    type F6[HE]      = Fallable[Nothing, HE,      Nothing]
+
+    // =====| Constructors |=====
+
+    succeed : [A] ->   A ->   Fallable.F3[A]   = ???
+    fail    : [HE] ->  HE ->  Fallable.F6[HE]  = ???
+    die     : [UHE] -> UHE -> Fallable.F5[UHE] = ???
+
+    // =====| Functions |=====
+
+    mapSucced : [UHE, HE, A] -> (fallable: Fallable[UHE, HE, A]) -> [A2]   -> (f: A -> A2)     -> Fallable[UHE,  HE,  A2] = ???
+    mapFail   : [UHE, HE, A] -> (fallable: Fallable[UHE, HE, A]) -> [HE2]  -> (f: HE -> HE2)   -> Fallable[UHE,  HE2, A ] = ???
+    mapDie    : [UHE, HE, A] -> (fallable: Fallable[UHE, HE, A]) -> [UHE2] -> (f: UHE -> UHE2) -> Fallable[UHE2, HE,  A ] = ???
+
+}
+
+// --- possibly have some syntatic sugar for these? ---
+
+tmp1 : Int??         = ???  // Fallable[Error,   Nothing, Int]
+tmp2 : Int??[String] = ???  // Fallable[Error,   String,  Int]
+tmp3 : Int?          = ???  // Fallable[Nothing, Error,   Int]
+tmp4 : Int?[String]  = ???  // Fallable[Nothing, String,  Int]
+
+// --- syntatic sugar for effects as well? ---
+
+tmp4 : #Int = ???  // Effect[Int]
+tmp5 : !Int = ???  // Effect[Int]
+
+// Im not sure if I like '#' or '!' better...
+// - on one hand, '#' is the same as the proposed 'unwrap' syntax
+// - not sure if that is a pro or a con
+// - if '#' matches '#', then the error syntax should probably match as well?
+
+
+
+// 'effect-unwrap'/'effect-type' + 'failable-unwrap'/'failable-type'
+
+
+
+// --- [1] : '#'/'#' + '~'/'?' ---
+
+// helpers
+
+getInfo : #(String, Int)?? = {
+    _    : Unit   = #Console.print("Your name: ")
+    name : String = #Console.readLine
+    _    : Unit   = #Console.print("Your age: ")
+    age  : Int    = ~(#Console.readLine).toInt
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Beer?[String] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else           Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : #Beer??[String] = {
+    (name, age) : (String, Int) = ~#getInfo
+    fBeer       : Beer?[String] = makePurchase(name, age)
+    fBeer2      : Beer?[String] = fBeer.mapFail { e -> "Uh oh... $e" }
+    beer        : Beer          = ~fBeer2
+
+    beer
+}
+
+
+
+// --- [2] : '#'/'#' + '?'/'?' ---
+
+// helpers
+
+getInfo : #(String, Int)?? = {
+    _    : Unit   = #Console.print("Your name: ")
+    name : String = #Console.readLine
+    _    : Unit   = #Console.print("Your age: ")
+    age  : Int    = ?(#Console.readLine).toInt
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Beer?[String] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else           Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : #Beer??[String] = {
+    (name, age) : (String, Int) = ?#getInfo
+    fBeer       : Beer?[String] = makePurchase(name, age)
+    fBeer2      : Beer?[String] = fBeer.mapFail { e -> "Uh oh... $e" }
+    beer        : Beer          = ?fBeer2
+
+    beer
+}
+
+
+
+// --- [3] : '#'/'#' + '~'/'~' ---
+
+// helpers
+
+getInfo : #(String, Int)~~ = {
+    _    : Unit   = #Console.print("Your name: ")
+    name : String = #Console.readLine
+    _    : Unit   = #Console.print("Your age: ")
+    age  : Int    = ~(#Console.readLine).toInt
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Beer~[String] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else           Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : #Beer~~[String] = {
+    (name, age) : (String, Int) = ~#getInfo
+    fBeer       : Beer~[String] = makePurchase(name, age)
+    fBeer2      : Beer~[String] = fBeer.mapFail { e -> "Uh oh... $e" }
+    beer        : Beer          = ~fBeer2
+
+    beer
+}
+
+
+
+// --- [4] : '#'/'!' + '~'/'?' ---
+
+// helpers
+
+getInfo : !(String, Int)?? = {
+    _    : Unit   = #Console.print("Your name: ")
+    name : String = #Console.readLine
+    _    : Unit   = #Console.print("Your age: ")
+    age  : Int    = ~(#Console.readLine).toInt
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Beer?[String] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else           Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : !Beer??[String] = {
+    (name, age) : (String, Int) = ~#getInfo
+    fBeer       : Beer?[String] = makePurchase(name, age)
+    fBeer2      : Beer?[String] = fBeer.mapFail { e -> "Uh oh... $e" }
+    beer        : Beer          = ~fBeer2
+
+    beer
+}
+
+
+
+// --- [5] : '!'/'#' + '~'/'?' ---
+// I think that this one is a total no-go, it reads way too much like boolean not
+
+// helpers
+
+getInfo : #(String, Int)?? = {
+    _    : Unit   = !Console.print("Your name: ")
+    name : String = !Console.readLine
+    _    : Unit   = !Console.print("Your age: ")
+    age  : Int    = ~(#Console.readLine).toInt
+
+    (name, age)
+}
+
+makePurchase : (name: String, age: Int) -> Beer?[String] =
+  if (age >= 21) Fallible.succeed(Beer.new)
+  else           Fallible.fail("Sorry, $name, you are not old enough")
+
+// implementation
+
+buyBeer : #Beer??[String] = {
+    (name, age) : (String, Int) = ~!getInfo
+    fBeer       : Beer?[String] = makePurchase(name, age)
+    fBeer2      : Beer?[String] = fBeer.mapFail { e -> "Uh oh... $e" }
+    beer        : Beer          = ~fBeer2
+
+    beer
+}
+
+
+
+
+
+
+
+
+// TOOD (KR) : Delete...
+
+// types
+
+type Fallable[UnhandleableError, HandleableError, Success] = ...
+type Effect[ResultType] = ...
+
+// using '?'
+
+tmpQ1 : Int?                    = ???  // Fallable[Nothing, Error,   Int]
+tmpQ2 : Int?[String]            = ???  // Fallable[Nothing, String,  Int]
+tmpQ3 : Int??                   = ???  // Fallable[Error,   Nothing, Int]
+tmpQ4 : Int??[String]           = ???  // Fallable[Error,   String,  Int]
+tmpQ5 : Int???                  = ???  // Fallable[Error,   Error,   Int]
+tmpQ6 : Int???[String, Boolean] = ???  // Fallable[String,  Boolean, Int]
+
+tmpEQ1 : #Int?                    = ???  // Effect[Fallable[Nothing, Error,   Int]]
+tmpEQ2 : #Int?[String]            = ???  // Effect[Fallable[Nothing, String,  Int]]
+tmpEQ3 : #Int??                   = ???  // Effect[Fallable[Error,   Nothing, Int]]
+tmpEQ4 : #Int??[String]           = ???  // Effect[Fallable[Error,   String,  Int]]
+tmpEQ5 : #Int???                  = ???  // Effect[Fallable[Error,   Error,   Int]]
+tmpEQ6 : #Int???[String, Boolean] = ???  // Effect[Fallable[String,  Boolean, Int]]
+
+// using '~'
+
+tmpT1 : Int~                    = ???  // Fallable[Nothing, Error,   Int]
+tmpT2 : Int~[String]            = ???  // Fallable[Nothing, String,  Int]
+tmpT3 : Int~~                   = ???  // Fallable[Error,   Nothing, Int]
+tmpT4 : Int~~[String]           = ???  // Fallable[Error,   String,  Int]
+tmpT5 : Int~~~                  = ???  // Fallable[Error,   Error,   Int]
+tmpT6 : Int~~~[String, Boolean] = ???  // Fallable[String,  Boolean, Int]
+
+tmpET1 : #Int~                    = ???  // Effect[Fallable[Nothing, Error,   Int]]
+tmpET2 : #Int~[String]            = ???  // Effect[Fallable[Nothing, String,  Int]]
+tmpET3 : #Int~~                   = ???  // Effect[Fallable[Error,   Nothing, Int]]
+tmpET4 : #Int~~[String]           = ???  // Effect[Fallable[Error,   String,  Int]]
+tmpET5 : #Int~~~                  = ???  // Effect[Fallable[Error,   Error,   Int]]
+tmpET6 : #Int~~~[String, Boolean] = ???  // Effect[Fallable[String,  Boolean, Int]]

@@ -1,0 +1,31 @@
+
+times2 : Int -> Int = _ * 2
+
+tmp1 := times2(5)
+tmp2 := 5.times2
+
+// I prefer the 2nd one much more
+// I think that all functions should be callable in this way
+
+* : String -> Int -> String = ???
+
+tmp3 := "Test" * 5
+
+mkString : [A: Show] -> (list: List[A]) -> String = ???
+mkString : [A: Show] -> (list: List[A]) -> (between: String) -> String = ???
+mkString : [A: Show] -> (list: List[A]) -> (before: String, between: String, after: String) -> String = ???
+
+mkStringC  : [A: Show] -> (list: List[A]) -> String = list.mkString(", ")
+mkStringBC : [A: Show] -> (list: List[A]) -> String = list.mkString("[", ", ", "]")
+mkStringPC : [A: Show] -> (list: List[A]) -> String = list.mkString("(", ", ", ")")
+
+mkStringBC : [A: Show] -> (list: List[A]) -> (prefix: String) -> String = list.mkString("$prefix[", ", ", "]")
+mkStringPC : [A: Show] -> (list: List[A]) -> (prefix: String) -> String = list.mkString("$prefix(", ", ", ")")
+
+list : List[Int] = List(1, 2, 3)
+
+tmp4 : String = list.mkString                  // "123"
+tmp5 : String = list.mkString(", ")            // "1, 2, 3"
+tmp6 : String = list.mkString("[", ", ", "]")  // "[1, 2, 3]"
+tmp7 : String = list.mkStringBC                // "[1, 2, 3]"
+tmp8 : String = list.mkStringBC("MyInts")      // "MyInts[1, 2, 3]"
