@@ -1,0 +1,106 @@
+
+namespace Console {
+
+    struct Read(canAccess: Set[Path])
+    struct Write(canAccess: Set[Path])
+
+    type ReadEnv = { consoleRead: Console.Read }
+    type WriteEnv = { consoleWrite: Console.Write }
+
+    readLine : Console.ReadEnv >-> #String = ???
+
+    print : Console.WriteEnv >-> String -> #Unit = ???
+
+    println : Console.WriteEnv >-> String -> #Unit = ???
+
+    prompt : (Console.ReadEnv & Console.WriteEnv) >-> (promptString: String) -> #String = {
+        _        := #print(promptString)
+        response := #readLine
+
+        response
+    }
+
+}
+
+
+type Path = ???
+
+type FileSystem = ???
+namespace FileSystem {
+
+    type Read = ???
+    type Write = ???
+
+    type ReadEnv = { fileSystemRead: FileSystem.Read }
+    type WriteEnv = { fileSystemWrite: FileSystem.Write }
+
+    exists : FileSystem.ReadEnv >-> Path -> #Boolean? = ???
+
+    readFile : FileSystem.ReadEnv >-> Path -> #String? = ???
+
+    writeFile : FileSystem.WriteEnv >-> Path -> String -> #Unit? = ???
+
+}
+
+path : Path = Path.new("./a/b/c.txt")
+
+tmp1 : FileSystem.ReadEnv >-> #Boolean? = FileSystem.exists(path)
+tmp2 : FileSystem.ReadEnv >-> #Boolean? = path.exists
+
+tmp3 : FileSystem.ReadEnv >-> #String? = path.readFile
+
+tmp4 : FileSystem.WriteEnv >-> #Unit? = path.writeFile("Hello File!")
+tmp5 : FileSystem.WriteEnv >-> #Unit? = FileSystem.writeFile(path)("Hello File!")
+
+
+askAndPrintFileContents : (Console.ReadEnv & Console.WriteEnv & FileSystem.ReadEnv) >-> #Unit? = {
+    path     : Path   = Path.new(#Console.prompt("File that you would like to read: "))
+    contents : String = #path.readFile
+    _        : Unit   = Console.println("Contents of '$path':\n$contents")
+
+    ()
+}
+
+
+// How to modify an ENV type?
+
+namespace Env {
+
+    modified : [E <: Type.Record] -> E >-> (E -> E) -> [T] -> (E >-> T) -> T = ???
+
+    modifiedF : [E <: Type.Record] -> E >-> [D, F] -> (E -> E?[D, F]) -> [T] -> (E >-> T) -> T?[D, F] = ???
+
+}
+
+namespace FileSystem {
+
+    @private
+    modifyRead : FileSystem.Read -> (paths: Set[Path]) -> FileSystem.Read? = ???
+    @private
+    modifyWrite : FileSystem.Write -> (paths: Set[Path]) -> FileSystem.Write? = ???
+
+
+    limitReadAccessTo : FileSystem.ReadEnv >-> (paths: Path*) -> [T] -> (use: FileSystem.ReadEnv >-> T) -> T? =
+        Env.modifiedF[FileSystem.ReadEnv] { Record(fileSystemRead) =>
+            Record(
+                fileSystemRead: ?fileSystemRead.modifyRead(paths.toSet),
+            )
+        }[T](use)
+
+    limitWriteAccessTo : FileSystem.WriteEnv >-> (paths: Path*) -> [T] -> (use: FileSystem.WriteEnv >-> T) -> T? =
+        Env.modifiedF[FileSystem.WriteEnv] { Record(fileSystemWrite) =>
+            Record(
+                fileSystemWrite: ?fileSystemWrite.modifyWrite(paths.toSet),
+            )
+        }[T](use)
+
+    @failHard
+    limitReadWriteAccessTo : (FileSystem.ReadEnv & FileSystem.WriteEnv) >-> (paths: Path*) -> [T] -> (use: (FileSystem.ReadEnv & FileSystem.WriteEnv) >-> T) -> T? =
+        Env.modifiedF[(FileSystem.ReadEnv & FileSystem.WriteEnv)] { Record(fileSystemRead, fileSystemWrite) =>
+            Record(
+                fileSystemRead: ?fileSystemRead.modifyRead(paths.toSet),
+                fileSystemWrite: ?fileSystemWrite.modifyWrite(paths.toSet),
+            )
+        }[T](use)
+
+}

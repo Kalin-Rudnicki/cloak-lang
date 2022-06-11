@@ -1,0 +1,87 @@
+
+adt Fallible[D, F, S] = [
+    struct Succeed(s: S),
+    struct Fail(f: NonEmptyList[F]),
+    struct Die(d: NonEmptyList[D]), // TODO (KR) : Should Die also have a `List[F]`?
+]
+namespace Fallible {
+
+    // =====| Functions |=====
+
+    @inline mapS : [D, F, S] -> Fallible[D, F, S] -> [S2] -> (S -> S2) -> Fallible[D,  F,  S2] = _.mapDFS(identity, identity, _       )
+    @inline mapF : [D, F, S] -> Fallible[D, F, S] -> [F2] -> (F -> F2) -> Fallible[D,  F2, S ] = _.mapDFS(identity, _,        identity)
+    @inline mapD : [D, F, S] -> Fallible[D, F, S] -> [D2] -> (D -> D2) -> Fallible[D2, F,  S ] = _.mapDFS(_,        identity, identity)
+
+    @inline mapFS : [D, F, S] -> Fallible[D, F, S] -> [F2, S2] -> (F -> F2, S -> S2) -> Fallible[D,  F2, S2] = _.mapDFS(identity, _,        _       )
+    @inline mapDS : [D, F, S] -> Fallible[D, F, S] -> [D2, S2] -> (D -> F2, S -> S2) -> Fallible[D2, F,  S2] = _.mapDFS(_,        identity, _       )
+    @inline mapDF : [D, F, S] -> Fallible[D, F, S] -> [D2, F2] -> (D -> D2, F -> F2) -> Fallible[D2, F2,  S] = _.mapDFS(_,        _,        identity)
+
+    mapDFS : [D, F, S] -> Fallible[D, F, S] -> [D2, F2, S2] -> (dF: D -> D2, fF: F -> F2, sF: S -> S2) -> Fallible[D2, F2, S2] = {
+        case Fallible.Succeed(s) => Fallible.Succeed(sF(s))
+        case Fallible.Fail(f)    => Fallible.Fail(f.map(fF))
+        case Fallible.Die(d)     => Fallible.Die(d.map(dF))
+    }
+
+
+    @inline failToDie : [D, S] -> Fallible[D, D, S] -> Fallible[D, Nothing, S] = _.failToDie(identity)
+    @inline dieToFail : [F, S] -> Fallible[F, F, S] -> Fallible[Nothing, F, S] = _.dieToFail(identity)
+
+    failToDie : [D, F, S] -> Fallible[D, F, S] -> (fF: F -> D) -> Fallible[D, Nothing, S] = {
+        case s: Fallible.Succeed[S] => s
+        case Fallible.Fail(f)       => Fallible.Die(f.map(fF))
+        case d: Fallible.Die[D]     => d
+    }
+    dieToFail : [D, F, S] -> (v: Fallible[D, F, S]) -> (dF: D -> F) -> Fallible[Nothing, F, S] = {
+        case s: Fallible.Succeed[S] => s
+        case f: Fallible.Fail[F]    => f
+        case Fallible.Die(d)        => Fallible.Fail(d.map(dF))
+    }
+
+
+    <+> : [D, F, S1] -> (v1: Fallible[D, F, S1]) -> [S2] -> (v2: Fallible[D, F, S2]) -> Fallible[D, F, (S1, S2)] =
+      (v1, v2) match {
+          case (Fallible.Succeed(s1), Fallible.Succeed(s2)) => Fallable.Succeed((s1, s2))
+          case (Fallible.Fail(f1), Fallible.Fail(f2)) => Fallable.Fail(f1 ++ f2)
+          case (Fallible.Die(d1), Fallible.Die(d2))   => Fallable.Die(d1 ++ d2)
+          case (d: Fallible.Die[D], _) => d
+          case (_, d: Fallible.Die[D]) => d
+          case (f: Fallible.Fail[F], _) => f
+          case (_, f: Fallible.Fail[F]) => f
+      }
+
+    toOption : [D, F, S] -> S[D, F] -> Option[S] = {
+        case Fallible.Succeed(s) => Some.new(s)
+        case _                   => None
+    }
+
+    // =====| Error syntax |=====
+
+    _ : Int?[A, B] = ???  // Fallible[A,       B,       Int]
+
+    _ : Int?[A]    = ???  // Fallible[A,       Nothing, Int]
+    _ : Int?       = ???  // Fallible[Error,   Nothing, Int]
+
+    _ : Int??[A]   = ???  // Fallible[Error,   A,       Int]
+    _ : Int??      = ???  // Fallible[Error,   Error,   Int]
+
+    _ : Int???[A]  = ???  // Fallible[Nothing,  A,      Int]
+    _ : Int???     = ???  // Fallible[Nothing,  Error,  Int]
+
+}
+
+// "Failing hard" vs "failing fast"
+// - "failing fast" would always opt for de-sugaring to a monadic syntax
+//   - as soon as there is a single failure, that becomes the failure, and nothing else will run
+// - "failing hard" would opt for an applicative syntax wherever possible
+//   - the compiler will attempt to collect as many errors as possible, and combine them into a single error
+
+toInt : String -> Int? = ???
+
+@failFast
+tmp1 : (Int, Int, Int)? = (?"A".toInt, ?"B".toInt, ?"C".toInt) // Fallible.Die("A")
+
+@failHard
+tmp2 : (Int, Int, Int)? = (?"A".toInt, ?"B".toInt, ?"C".toInt) // Fallible.Die("A", "B", "C)
+
+// You should be able to set this on a project level, as well as on a scope level.
+// Inner specifications should override outer specifications.
